@@ -66,7 +66,7 @@ This structure is used to be both readable and able to easily convert back to py
 
 #### Size Chart
 
-On the webpage, the size chart is a table where the columns represent the different offered sizes of the product and the rows are measurements such as "Chest Size", "Back Length", "Sleeve Length", etc. The rows present differ product to product. Hence the size of this custom field will be dynamic in the sense that it will have varying number of fields but each field value will be an array of measurements. This array will be correspond to the sizes as present in the [Sizes field](#exported-fields).
+On the webpage, the size chart is a table where the columns represent the different offered sizes of the product and the rows are measurements such as "Chest Size", "Back Length", "Sleeve Length", etc. The rows present differ product to product. Hence the size of this custom field will be dynamic in the sense that it will have varying number of fields but each field value will be an array of measurements. This array will correspond to the sizes present in the [Sizes field](#exported-fields).
 
 
 #### Special Function

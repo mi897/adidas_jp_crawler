@@ -15,6 +15,7 @@ Install the python requirements:
 
 | Field Name | Description |
 | :--------- | :---------- |
+| Product Number | The unique ID number of the product |
 | Product Name | Name of the product |
 | Product URL | Link to the product details page |
 | Breadcrumb | Breadcrumb trail to the product |

@@ -9,7 +9,17 @@ Install the python requirements:
 
     pip install -r requirements.txt
 
+Install a playwright browser:
 
+    playwright install
+    playwright install chromium
+    
+
+## Usage
+
+From the project directory, run the adidas_mens crawler using scrapy:
+
+    scrapy crawl adidas_mens
 
 ## Exported Fields
 

@@ -17,7 +17,7 @@ NEWSPIDER_MODULE = "adidas_jp_crawler.spiders"
 #USER_AGENT = "adidas_jp_crawler (+http://www.yourdomain.com)"
 
 # Obey robots.txt rules
-ROBOTSTXT_OBEY = True
+ROBOTSTXT_OBEY = False
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 #CONCURRENT_REQUESTS = 32
@@ -31,7 +31,7 @@ ROBOTSTXT_OBEY = True
 #CONCURRENT_REQUESTS_PER_IP = 16
 
 # Disable cookies (enabled by default)
-#COOKIES_ENABLED = False
+COOKIES_ENABLED = False
 
 # Disable Telnet Console (enabled by default)
 #TELNETCONSOLE_ENABLED = False
@@ -91,3 +91,19 @@ ROBOTSTXT_OBEY = True
 REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 FEED_EXPORT_ENCODING = "utf-8"
+
+# Set Playwright as the download handler
+DOWNLOAD_HANDLERS = {
+    "http": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
+    "https": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
+}
+
+# Set the Playwright browser type
+PLAYWRIGHT_BROWSER_TYPE = "chromium"
+
+# Set Playwright launch options
+PLAYWRIGHT_LAUNCH_OPTIONS = {
+    "headless": False,
+    "devtools": True,
+    "slow_mo": 5000, # milliseconds
+}

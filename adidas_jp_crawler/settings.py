@@ -94,6 +94,7 @@ FEED_EXPORT_ENCODING = "utf-8"
 
 # Set Playwright as the download handler
 DOWNLOAD_HANDLERS = {
+    "file": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
     "http": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
     "https": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
 }

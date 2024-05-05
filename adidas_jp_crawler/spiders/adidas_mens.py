@@ -1,5 +1,5 @@
 import scrapy
-from playwright.async_api import Page, Locator
+from playwright.async_api import Page, expect, Locator
 
 from typing import List, Dict
 from urllib.parse import urljoin
@@ -88,13 +88,6 @@ class AdidasMensSpider(scrapy.Spider):
             The list of coordinated products
         '''
 
-        coord_product = {
-            "product_id": None,
-            "product_name": None,
-            "product_url": None,
-            "image_url": None,
-            "price": None,
-        }
         products = []
 
         coordinate_items: List[Locator] = await self.details_page.locator('.coordinateItems').get_by_role("listitem").all()
@@ -102,16 +95,26 @@ class AdidasMensSpider(scrapy.Spider):
         
         for item in coordinate_items:
             await item.locator("div").first.click()
+
             await coordinate_item_container.wait_for()
 
             product_image_wrapper = coordinate_item_container.locator('.image_wrapper')
-            product_url = urljoin(self.details_page.url, await product_image_wrapper.get_by_role("link").get_attribute("href"))
+
+            product_name = coordinate_item_container.locator(".info_wrapper > span > span")
+
+            product_price = coordinate_item_container.locator(".info_wrapper > .mdl-price > p > span")
+
+            url = product_image_wrapper.get_by_role("link")
+
+            await expect(product_name).not_to_contain_text(products[-1]['product_name']) if products else None
+
+            product_url = urljoin(self.details_page.url, await url.get_attribute("href"))
             product = {
                 "product_id": product_url.split("/")[-1],
-                "product_name": await coordinate_item_container.locator(".info_wrapper > span > span").text_content(),
+                "product_name": await product_name.text_content(),
                 "product_url": product_url,
                 "image_url": urljoin(self.details_page.url, await product_image_wrapper.get_by_role('img').get_attribute('src')),
-                "price": await coordinate_item_container.locator(".info_wrapper > .mdl-price > p > span").text_content(),
+                "price": await product_price.text_content(),
             }
 
             products.append(product)

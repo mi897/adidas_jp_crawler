@@ -83,7 +83,7 @@ On the webpage, the size chart is a table where the columns represent the differ
 
 | Field Name | Description |
 | :--------- | :---------- |
-| function | Name of the special function |
+| title | Name of the special function |
 | description | Description of special function |
 
 

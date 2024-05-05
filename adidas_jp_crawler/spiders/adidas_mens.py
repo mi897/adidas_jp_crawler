@@ -11,6 +11,7 @@ class AdidasMensSpider(scrapy.Spider):
     # start_url = "https://shop.adidas.jp/item/?gender=mens&category=wear"
     # start_url = "file:///home/irfan/Documents/adidas_jp_crawler/samples/product_details_page.mhtml"
     start_url = "https://shop.adidas.jp/products/IX6434/"
+    # start_url = "https://shop.adidas.jp/products/IN4769/"
 
     details_page: Page = None
 
@@ -51,12 +52,12 @@ class AdidasMensSpider(scrapy.Spider):
             # "Price": await self.get_product_price(),
             # "Sizes": await self.get_product_sizes(),
             # "Size Fit": await self.get_product_size_fit(),
-            "Coordinated Products ": await self.get_coordinated_products(),
+            # "Coordinated Products ": await self.get_coordinated_products(),
             # "Description Title": await self.get_product_description_title(),
             # "Description General": await self.get_product_description_general(),
             # "Description Itemized": await self.get_product_description_itemized(),
             # "Size Chart": await self.get_product_size_chart(),
-            # "Special Functions": await self.get_product_special_functions(),
+            "Special Functions": await self.get_product_special_functions(),
             # "Rating": await self.get_product_rating(),
             # "Number of Reviews": await self.get_product_num_reviews(),
             # "Reviews": await self.get_product_reviews(),
@@ -329,7 +330,33 @@ class AdidasMensSpider(scrapy.Spider):
         pass
 
     async def get_product_special_functions(self):
-        pass
+        '''
+        Extracts any special function that the product might have from the details page
+
+        Expects:
+            A class variable "details_page" which is a playwright page
+        
+        Returns:
+            The special function title and description
+        '''
+
+        special_function = None
+
+        selector = '.contentsWrapper > main > div > div > .css-j2pp63 > div > div > .details'
+        if await self.details_page.locator(selector=selector).is_visible():
+
+            special_function_wrapper = self.details_page.locator(selector)
+
+            title = await special_function_wrapper.locator('a').text_content()
+            description = (await special_function_wrapper.text_content())[len(title):]
+
+            special_function = {
+                "title": title,
+                "description": description,
+            }
+
+        return special_function
+
 
     async def get_product_rating(self) -> str:
         '''

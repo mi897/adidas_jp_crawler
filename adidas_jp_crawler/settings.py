@@ -106,5 +106,5 @@ PLAYWRIGHT_BROWSER_TYPE = "chromium"
 PLAYWRIGHT_LAUNCH_OPTIONS = {
     "headless": False,
     "devtools": True,
-    # "slow_mo": 5000, # milliseconds
+    # "slow_mo": 2000, # milliseconds
 }

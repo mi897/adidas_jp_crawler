@@ -58,7 +58,7 @@ From the project directory, run the adidas_mens crawler using scrapy:
 Custom fields are used to handle nested data. They are encapsulated within curly braces {} in the exported document. They are structured as follows:
 {
     "field_name_1": field_value,
-    "field_name_1": field_value
+    "field_name_2": field_value
 }
 
 This structure is used to be both readable and able to easily convert back to python dictionaries using the json.loads function.

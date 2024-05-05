@@ -1,8 +1,9 @@
 import scrapy
-from playwright.async_api import Page, expect
-
+from playwright.async_api import Page, Locator
 
 from typing import List, Dict
+from urllib.parse import urljoin
+
 
 class AdidasMensSpider(scrapy.Spider):
     name = "adidas_mens"
@@ -41,30 +42,30 @@ class AdidasMensSpider(scrapy.Spider):
 
         output = {
             "title": title,
-            "Product Number": self.get_product_number(), # parse url
-            "Product Name": await self.get_product_name(),
-            "Product URL": response.url,
-            "Breadcrumb": await self.get_product_breadcrumb(),
-            "Category": await self.get_product_category(),
-            "Image URL": await self.get_product_image_url(), # need to wait after click
-            "Price": await self.get_product_price(),
-            "Sizes": await self.get_product_sizes(),
-            "Size Fit": await self.get_product_size_fit(),
-            "Coordinated Products ": None,
-            "Description Title": await self.get_product_description_title(),
-            "Description General": await self.get_product_description_general(),
-            "Description Itemized": await self.get_product_description_itemized(),
-            "Size Chart": await self.get_product_size_chart(),
-            "Special Functions": await self.get_product_special_functions(),
-            "Rating": await self.get_product_rating(),
-            "Number of Reviews": await self.get_product_num_reviews(),
-            "Reviews": await self.get_product_reviews(),
-            "Recommended Rate": await self.get_product_recommended_rate(),
-            "Rating Fit": await self.get_product_rating_fit(),
-            "Rating Length": await self.get_product_rating_length(),
-            "Rating Quality": await self.get_product_rating_quality(),
-            "Rating Comfort": await self.get_product_rating_comfort(),
-            "KWs": await self.get_product_kws(),
+            # "Product Number": self.get_product_number(),
+            # "Product Name": await self.get_product_name(),
+            # "Product URL": response.url,
+            # "Breadcrumb": await self.get_product_breadcrumb(),
+            # "Category": await self.get_product_category(),
+            # "Image URL": await self.get_product_image_url(),
+            # "Price": await self.get_product_price(),
+            # "Sizes": await self.get_product_sizes(),
+            # "Size Fit": await self.get_product_size_fit(),
+            "Coordinated Products ": await self.get_coordinated_products(),
+            # "Description Title": await self.get_product_description_title(),
+            # "Description General": await self.get_product_description_general(),
+            # "Description Itemized": await self.get_product_description_itemized(),
+            # "Size Chart": await self.get_product_size_chart(),
+            # "Special Functions": await self.get_product_special_functions(),
+            # "Rating": await self.get_product_rating(),
+            # "Number of Reviews": await self.get_product_num_reviews(),
+            # "Reviews": await self.get_product_reviews(),
+            # "Recommended Rate": await self.get_product_recommended_rate(),
+            # "Rating Fit": await self.get_product_rating_fit(),
+            # "Rating Length": await self.get_product_rating_length(),
+            # "Rating Quality": await self.get_product_rating_quality(),
+            # "Rating Comfort": await self.get_product_rating_comfort(),
+            # "KWs": await self.get_product_kws(),
         }
 
         await self.details_page.close()
@@ -76,19 +77,50 @@ class AdidasMensSpider(scrapy.Spider):
         await page.close()
 
 
-    def get_coordinated_products(self) -> List[Dict]:
+    async def get_coordinated_products(self) -> List[Dict]:
+        '''
+        Extracts coordinate products from the details page
 
-        # in self.details_page
-
-        # locate coordinateRecommend class
-
-        # for all li items in ul
-        # click on the div with role button
-        # extract the coordinate_time_container below
-
-        # parse each coordinated product
+        Expects:
+            A class variable "details_page" which is a playwright page
         
-        pass
+        Returns:
+            The list of coordinated products
+        '''
+
+        coord_product = {
+            "product_id": None,
+            "product_name": None,
+            "product_url": None,
+            "image_url": None,
+            "price": None,
+        }
+        products = []
+
+        coordinate_items: List[Locator] = await self.details_page.locator('.coordinateItems').get_by_role("listitem").all()
+        coordinate_item_container = self.details_page.locator(".coordinate_item_container.add-open")
+        
+        for item in coordinate_items:
+            await item.locator("div").first.click()
+            await coordinate_item_container.wait_for()
+
+            product_image_wrapper = coordinate_item_container.locator('.image_wrapper')
+            product_url = urljoin(self.details_page.url, await product_image_wrapper.get_by_role("link").get_attribute("href"))
+            product = {
+                "product_id": product_url.split("/")[-1],
+                "product_name": await coordinate_item_container.locator(".info_wrapper > span > span").text_content(),
+                "product_url": product_url,
+                "image_url": urljoin(self.details_page.url, await product_image_wrapper.get_by_role('img').get_attribute('src')),
+                "price": await coordinate_item_container.locator(".info_wrapper > .mdl-price > p > span").text_content(),
+            }
+
+            products.append(product)
+
+            await item.locator("div").first.click()
+            await coordinate_item_container.wait_for(state="hidden")
+
+
+        return products
 
     def get_product_number(self) -> str:
         '''

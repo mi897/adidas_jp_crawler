@@ -41,12 +41,12 @@ class AdidasMensSpider(scrapy.Spider):
 
         output = {
             "title": title,
-            "Product Number": None, # parse url
+            "Product Number": self.get_product_number(), # parse url
             "Product Name": await self.get_product_name(),
             "Product URL": response.url,
             "Breadcrumb": await self.get_product_breadcrumb(),
             "Category": await self.get_product_category(),
-            # "Image URL": await self.get_product_image_url(), # need to wait after click
+            "Image URL": await self.get_product_image_url(), # need to wait after click
             "Price": await self.get_product_price(),
             "Sizes": await self.get_product_sizes(),
             "Size Fit": await self.get_product_size_fit(),
@@ -102,7 +102,7 @@ class AdidasMensSpider(scrapy.Spider):
         '''
 
         url = self.details_page.url
-        product_number = url
+        product_number = url.split('/')[-2]
 
         return product_number
         
@@ -189,7 +189,8 @@ class AdidasMensSpider(scrapy.Spider):
         for image in product_images:
             # expect()
             # (await image.get_attribute("src")).startswith("/static")
-            await expect(image).not_to_have_attribute("src", r'itemCard_dummy')
+            await image.scroll_into_view_if_needed()
+            image_urls.append(await image.get_attribute("src"))
 
         # image_urls = [await img.get_attribute("src") for img in product_images]
 
@@ -243,51 +244,197 @@ class AdidasMensSpider(scrapy.Spider):
 
         return size_fit
 
-    def get_product_description_title(self) -> str:
+    async def get_product_description_title(self) -> str:
+        '''
+        Extracts the title of the product description from the details page
+
+        Expects:
+            A class variable "details_page" which is a playwright page
+        
+        Returns:
+            The description title
+        '''
+
+        description_title = await self.details_page.locator("css=.heading.itemFeature").text_content()
+        
+        return description_title
+
+    async def get_product_description_general(self) -> str:
+        '''
+        Extracts the general product description from the details page
+
+        Expects:
+            A class variable "details_page" which is a playwright page
+        
+        Returns:
+            The general product description
+        '''
+
+        general_description = await self.details_page.locator("css=.description").locator("css=.description_part.details").text_content()
+        
+        return general_description
+
+    async def get_product_description_itemized(self) -> str:
+        '''
+        Extracts the itemized product description from the details page
+
+        Expects:
+            A class variable "details_page" which is a playwright page
+        
+        Returns:
+            The itemized description
+        '''
+
+        itemized_description_locators = await self.details_page.locator("css=.description").locator("css=.articleFeatures").get_by_role("listitem").all()
+        itemized_description = [await item.text_content() for item in itemized_description_locators]
+
+        return itemized_description
+
+    async def get_product_size_chart(self):
         pass
 
-    def get_product_description_general(self) -> str:
+    async def get_product_special_functions(self):
         pass
 
-    def get_product_description_itemized(self) -> str:
+    async def get_product_rating(self) -> str:
+        '''
+        Extracts the product rating from the details page
+
+        Expects:
+            A class variable "details_page" which is a playwright page
+        
+        Returns:
+            The product rating (out of 5)
+        '''
+
+        product_rating_container = self.details_page.locator("#BVRRContainer")
+
+        await self.details_page.mouse.wheel(0, 1000)
+        await self.details_page.mouse.wheel(0, -1000)
+        await self.details_page.mouse.wheel(0, 1200)
+
+        await product_rating_container.locator('#BVRRWidgetID').wait_for()
+        
+        rating_div = product_rating_container.locator('//*[@id="BVRRRatingOverall_"]/div[3]/span[1]')
+
+        await rating_div.scroll_into_view_if_needed()
+        
+        await rating_div.wait_for()
+        product_rating = await rating_div.text_content()
+
+        return product_rating
+
+    async def get_product_num_reviews(self) -> str:
+        '''
+        Extracts the number of ratings from the details page
+
+        Expects:
+            A class variable "details_page" which is a playwright page
+        
+        Returns:
+            The number of ratings
+        '''
+
+        num_rating = await self.details_page.locator("css=.BVRRNumber.BVRRBuyAgainTotal").text_content()
+
+        return num_rating
+
+    async def get_product_reviews(self):
         pass
 
-    def get_product_size_chart(self):
-        pass
+    async def get_product_recommended_rate(self) -> str:
+        '''
+        Extracts the rate of recommendations from the details page
 
-    def get_product_special_functions(self):
-        pass
+        Expects:
+            A class variable "details_page" which is a playwright page
+        
+        Returns:
+            The percentage rate of recommendations
+        '''
 
-    def get_product_rating(self) -> str:
-        pass
+        recommendations_rate = await self.details_page.locator("css=.BVRRBuyAgainPercentage").locator("css=.BVRRNumber").text_content()
 
-    def get_product_num_reviews(self) -> str:
-        pass
+        return recommendations_rate
 
-    def get_product_reviews(self):
-        pass
+    async def get_product_rating_fit(self) -> str:
+        '''
+        Extracts the fit rating from the details page
 
-    def get_product_recommended_rate(self) -> str:
-        pass
+        Expects:
+            A class variable "details_page" which is a playwright page
+        
+        Returns:
+            The fit rating (out of 5)
+        '''
 
-    def get_product_rating_fit(self) -> str:
-        pass
+        fit_rating = await self.details_page.locator('//*[@id="BVRRQuickTakeSummaryID"]/div/div/div/div[2]/div[5]/div/div[1]/div[1]/div[2]/div[2]/img').get_attribute("alt")
+        fit_rating = fit_rating.strip(" / 5")
 
-    def get_product_rating_length(self) -> str:
-        pass
+        return fit_rating
 
-    def get_product_rating_quality(self) -> str:
-        pass
 
-    def get_product_rating_comfort(self) -> str:
-        pass
+    async def get_product_rating_length(self) -> str:
+        '''
+        Extracts the length rating from the details page
 
-    def get_product_kws(self) -> List[str]:
-        pass
+        Expects:
+            A class variable "details_page" which is a playwright page
+        
+        Returns:
+            The length rating (out of 5)
+        '''
 
-    def get_product_rating(self):
-        pass
+        length_rating = await self.details_page.locator('//*[@id="BVRRQuickTakeSummaryID"]/div/div/div/div[2]/div[5]/div/div[1]/div[2]/div[2]/div[2]/img').get_attribute("alt")
+        length_rating = length_rating.strip(" / 5")
 
-    def get_product_rating(self):
-        pass
+        return length_rating
+
+    async def get_product_rating_quality(self) -> str:
+        '''
+        Extracts the quality rating from the details page
+
+        Expects:
+            A class variable "details_page" which is a playwright page
+        
+        Returns:
+            The quality rating (out of 5)
+        '''
+
+        quality_rating = await self.details_page.locator('//*[@id="BVRRQuickTakeSummaryID"]/div/div/div/div[2]/div[5]/div/div[2]/div[1]/div[2]/div[2]/img').get_attribute("alt")
+        quality_rating = quality_rating.strip(" / 5")
+
+        return quality_rating
+
+    async def get_product_rating_comfort(self) -> str:
+        '''
+        Extracts the comfort rating from the details page
+
+        Expects:
+            A class variable "details_page" which is a playwright page
+        
+        Returns:
+            The comfort rating (out of 5)
+        '''
+
+        comfort_rating = await self.details_page.locator('//*[@id="BVRRQuickTakeSummaryID"]/div/div/div/div[2]/div[5]/div/div[2]/div[2]/div[2]/div[2]/img').get_attribute("alt")
+        comfort_rating = comfort_rating.strip(" / 5")
+
+        return comfort_rating
+
+    async def get_product_kws(self) -> List[str]:
+        '''
+        Extracts the KWs from the details page
+
+        Expects:
+            A class variable "details_page" which is a playwright page
+        
+        Returns:
+            The list of KWs
+        '''
+
+        await self.details_page.mouse.wheel(0, 5000)
+        kws = await self.details_page.locator('.itemTagsPosition').get_by_role("link").all_text_contents()        
+
+        return kws
 

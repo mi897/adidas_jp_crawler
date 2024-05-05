@@ -1,5 +1,6 @@
 import scrapy
-from playwright.async_api import Page
+from playwright.async_api import Page, expect
+
 
 from typing import List, Dict
 
@@ -7,8 +8,8 @@ class AdidasMensSpider(scrapy.Spider):
     name = "adidas_mens"
     allowed_domains = ["shop.adidas.jp"]
     # start_url = "https://shop.adidas.jp/item/?gender=mens&category=wear"
-    start_url = "file:///home/irfan/Documents/adidas_jp_crawler/samples/product_details_page.mhtml"
-    # start_url = "https://shop.adidas.jp/products/IX6434/"
+    # start_url = "file:///home/irfan/Documents/adidas_jp_crawler/samples/product_details_page.mhtml"
+    start_url = "https://shop.adidas.jp/products/IX6434/"
 
     details_page: Page = None
 
@@ -40,30 +41,30 @@ class AdidasMensSpider(scrapy.Spider):
 
         output = {
             "title": title,
-            "Product Number": None,
+            "Product Number": None, # parse url
             "Product Name": await self.get_product_name(),
             "Product URL": response.url,
             "Breadcrumb": await self.get_product_breadcrumb(),
             "Category": await self.get_product_category(),
-            "Image URL": await self.get_product_image_url(),
-            "Price": None,
-            "Sizes": None,
-            "Size Fit": None,
+            # "Image URL": await self.get_product_image_url(), # need to wait after click
+            "Price": await self.get_product_price(),
+            "Sizes": await self.get_product_sizes(),
+            "Size Fit": await self.get_product_size_fit(),
             "Coordinated Products ": None,
-            "Description Title": None,
-            "Description General": None,
-            "Description Itemized": None,
-            "Size Chart": None,
-            "Special Functions": None,
-            "Rating": None,
-            "Number of Reviews": None,
-            "Reviews": None,
-            "Recommended Rate": None,
-            "Rating Fit": None,
-            "Rating Length": None,
-            "Rating Quality": None,
-            "Rating Comfort": None,
-            "KWs": None,
+            "Description Title": await self.get_product_description_title(),
+            "Description General": await self.get_product_description_general(),
+            "Description Itemized": await self.get_product_description_itemized(),
+            "Size Chart": await self.get_product_size_chart(),
+            "Special Functions": await self.get_product_special_functions(),
+            "Rating": await self.get_product_rating(),
+            "Number of Reviews": await self.get_product_num_reviews(),
+            "Reviews": await self.get_product_reviews(),
+            "Recommended Rate": await self.get_product_recommended_rate(),
+            "Rating Fit": await self.get_product_rating_fit(),
+            "Rating Length": await self.get_product_rating_length(),
+            "Rating Quality": await self.get_product_rating_quality(),
+            "Rating Comfort": await self.get_product_rating_comfort(),
+            "KWs": await self.get_product_kws(),
         }
 
         await self.details_page.close()
@@ -76,7 +77,7 @@ class AdidasMensSpider(scrapy.Spider):
 
 
     def get_coordinated_products(self) -> List[Dict]:
-            
+
         # in self.details_page
 
         # locate coordinateRecommend class
@@ -166,26 +167,81 @@ class AdidasMensSpider(scrapy.Spider):
 
         # click show more button
 
+        # get image wrapper
+
+        extended_image_wrapper = self.details_page.locator("css=.article_image_wrapper.isExpand")
+
+        # click expand button
+
         more_images_button = self.details_page.get_by_label('もっと見るボタン')
 
         await more_images_button.click()
 
-        more_images_button.wait_for()
+        # wait for image wrapper to extend
+
+        await extended_image_wrapper.wait_for()
 
         # get image urls
 
-        product_images = [await img.get_attribute("src") for img in await self.details_page.locator("css=.articleImageWrapper").locator("css=.image").all()]
+        product_images = await self.details_page.locator("css=.articleImageWrapper").locator("css=.image").all()
 
-        return product_images
+        image_urls = []
+        for image in product_images:
+            # expect()
+            # (await image.get_attribute("src")).startswith("/static")
+            await expect(image).not_to_have_attribute("src", r'itemCard_dummy')
 
-    def get_product_price(self) -> str:
-        pass
+        # image_urls = [await img.get_attribute("src") for img in product_images]
 
-    def get_product_sizes(self) -> List[str]:
-        pass
+        return image_urls
 
-    def get_product_size_fit(self) -> str:
-        pass
+    async def get_product_price(self) -> str:
+        '''
+        Extracts the product price from the details page
+
+        Expects:
+            A class variable "details_page" which is a playwright page
+        
+        Returns:
+            The product price
+        '''
+
+        product_price = await self.details_page.locator("css=.articlePrice").locator("css=.price-value").text_content()
+
+        return product_price
+
+    async def get_product_sizes(self) -> List[str]:
+        '''
+        Extracts the product sizes from the details page
+
+        Expects:
+            A class variable "details_page" which is a playwright page
+        
+        Returns:
+            The product sizes
+        '''
+
+        product_sizes_locators = await self.details_page.locator("css=.sizeSelectorList").get_by_role("listitem").all()
+
+        product_sizes = [await size.text_content() for size in product_sizes_locators]
+
+        return product_sizes
+
+    async def get_product_size_fit(self) -> str:
+        '''
+        Extracts the size fit from the details page
+
+        Expects:
+            A class variable "details_page" which is a playwright page
+        
+        Returns:
+            The size fit (out of 5)
+        '''
+
+        size_fit_bar_class = await self.details_page.locator("css=.sizeFitBar").locator("css=.marker").get_attribute("class")
+        size_fit = size_fit_bar_class[-3]
+
+        return size_fit
 
     def get_product_description_title(self) -> str:
         pass

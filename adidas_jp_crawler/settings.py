@@ -104,7 +104,9 @@ PLAYWRIGHT_BROWSER_TYPE = "chromium"
 
 # Set Playwright launch options
 PLAYWRIGHT_LAUNCH_OPTIONS = {
-    "headless": False,
-    "devtools": True,
-    "slow_mo": 500, # milliseconds
+    # "headless": False,
+    # "devtools": True,
+    # "slow_mo": 500, # milliseconds
 }
+
+PLAYWRIGHT_MAX_PAGES_PER_CONTEXT = 400
